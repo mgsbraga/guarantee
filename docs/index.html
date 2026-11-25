@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="robots" content="noindex,nofollow">
+<title>Guarantee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%230f766e%22/%3E%3Cpath d=%22M12 5l6 2.3v4.5c0 3.4-2.6 6.2-6 6.8-3.4-.6-6-3.4-6-6.8V7.3z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%221.8%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./app/base.css?v=0c87804c13">
+<link rel="stylesheet" href="./app/estilo.css?v=0f04ddd93a">
+<style>
+/* Celular: sempre no layout de telefone, mesmo aberto no PC */
+:root{--col:440px}
+@media(min-width:600px){
+  html{background:var(--surface-2)}
+  body{max-width:var(--col);margin:0 auto;min-height:100vh;box-shadow:0 0 0 1px var(--border),0 30px 80px rgba(0,0,0,.08)}
+}
+.wrap{max-width:var(--col);padding:max(14px,env(safe-area-inset-top)) 16px 130px}
+
+/* login */
+.login{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:28px 22px}
+.lg-hero{border-radius:26px;padding:26px 22px;color:#fff;position:relative;overflow:hidden;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.16),transparent 55%),linear-gradient(150deg,var(--g1),var(--g2));box-shadow:0 14px 34px color-mix(in srgb,var(--g1) 34%,transparent)}
+.lg-hero::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;border:28px solid rgba(255,255,255,.06)}
+.lg-hero .lgo{width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.16);display:grid;place-items:center}
+.lg-hero .lgo svg{width:26px;height:26px;stroke:#fff;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.lg-hero h1{margin:16px 0 2px;font-size:26px;letter-spacing:-.03em}
+.lg-hero p{margin:0;opacity:.85;font-size:14px}
+.lg-form{margin-top:22px}
+.lg-form .sh-send{margin-top:16px}
+.lembrar{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:14px;color:var(--ink-2)}
+.lembrar input{width:20px;height:20px;accent-color:var(--accent)}
+.lg-erro{margin-top:12px;color:var(--bad);font-size:13.5px;font-weight:600;min-height:18px}
+.lg-pe{margin-top:20px;font-size:12px;color:var(--muted);text-align:center;display:flex;gap:6px;align-items:center;justify-content:center}
+.lg-pe svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* topo */
+.top{display:flex;align-items:center;gap:12px;margin:6px 2px 18px}
+.who{width:42px;height:42px;border-radius:50%;border:0;color:#fff;font-weight:750;font-size:16px;display:grid;place-items:center;box-shadow:0 0 0 3px var(--plane),0 0 0 5px var(--grid);flex:none}
+.hi{flex:1;min-width:0}
+.hi-s{font-size:12.5px;color:var(--muted);font-weight:600}
+.hi-n{font-size:19px;font-weight:750;letter-spacing:-.02em;line-height:1.15}
+.mes{display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px;box-shadow:var(--shadow)}
+.mes button{width:30px;height:30px;border:0;background:none;color:var(--ink);border-radius:50%;cursor:pointer;display:grid;place-items:center}
+.mes span{font-size:13.5px;font-weight:700;min-width:62px;text-align:center}
+
+/* cartão principal (Notas) */
+.hero{position:relative;border-radius:24px;padding:20px 20px 18px;color:#fff;overflow:hidden;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,255,255,.16),transparent 55%),linear-gradient(150deg,var(--g1),var(--g2));
+  box-shadow:0 14px 34px color-mix(in srgb,var(--g1) 34%,transparent)}
+.hero::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;border:28px solid rgba(255,255,255,.06)}
+.h-k{font-size:12.5px;font-weight:650;opacity:.82;letter-spacing:.01em}
+.h-big{font-size:30px;font-weight:780;letter-spacing:-.03em;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.h-big small{font-size:14px;font-weight:600;opacity:.85;letter-spacing:0;margin-left:4px}
+.h-bar{height:7px;border-radius:5px;background:rgba(255,255,255,.22);margin-top:14px;overflow:hidden}
+.h-bar i{display:block;height:100%;border-radius:5px;background:#fff}
+.h-sub{font-size:12.5px;opacity:.85;margin-top:8px}
+.h-cam{position:relative;z-index:1;margin-top:18px;width:100%;border:0;border-radius:16px;padding:15px;background:#fff;color:var(--g1);font-size:16px;font-weight:750;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 16px rgba(0,0,0,.14)}
+.h-cam svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.h-cam:active{transform:scale(.98)}
+
+.sec{margin-top:24px}
+.sec-h{margin:0 4px 10px;align-items:center}
+.sec-h h3{font-size:14.5px;text-transform:none;letter-spacing:-.01em;color:var(--ink);font-weight:750;display:flex;align-items:center;gap:8px}
+.row{padding:12px 14px;gap:12px}
+.row .t{font-size:14.5px;font-weight:620}
+.row .s{font-size:12px}
+.row .m{min-width:0}.row .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vcol .v{font-size:14.5px}
+.ic{width:42px;height:42px;border-radius:13px}.ic svg{width:20px;height:20px}
+.ic img[data-foto]{visibility:hidden}
+.card.alert{border-color:color-mix(in srgb,var(--warn) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--warn) 7%,var(--surface)),var(--surface))}
+.btn-foto{border:0;border-radius:12px;padding:9px 13px;background:var(--ink);color:var(--plane);font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;flex:none}
+.btn-foto svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* Conferir */
+.res{border-radius:24px;padding:20px;color:#fff;position:relative;overflow:hidden;
+  background:radial-gradient(90% 80% at 0% 0%,color-mix(in srgb,var(--g1) 55%,transparent),transparent 70%),#121614;box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.res .h-k{opacity:.7}
+.res .h-big{font-size:34px}
+.io{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.io>div{background:rgba(255,255,255,.07);border-radius:14px;padding:10px 12px}
+.io .l{font-size:11.5px;opacity:.7;font-weight:650;display:flex;align-items:center;gap:5px}
+.io .l i{width:7px;height:7px;border-radius:50%}
+.io .n{font-size:15.5px;font-weight:720;margin-top:2px;font-variant-numeric:tabular-nums}
+.split{height:6px;border-radius:4px;background:#e66767;margin-top:14px;overflow:hidden}
+.split i{display:block;height:100%;background:#2dd4bf}
+.socs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.soc{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:14px;position:relative;overflow:hidden}
+.soc::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.soc .hd2{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.soc .av{width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:750}
+.soc .k{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:12px}
+.soc .v{font-size:17px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.soc .v.ret{font-size:15px;color:var(--accent)}
+.row.sub{padding:9px 14px 9px 68px;background:var(--surface-2)}
+.ro{font-size:12px;color:var(--muted);text-align:center;margin:22px 20px 0;display:flex;align-items:center;justify-content:center;gap:6px}
+.ro svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.atual{font-size:11.5px;color:var(--muted);text-align:center;margin-top:8px}
+.sair{display:flex;margin:18px auto 0;border:0;background:none;color:var(--muted);font-size:13px;font-weight:650;cursor:pointer;align-items:center;gap:6px;padding:8px 12px;border-radius:10px}
+.sair svg{width:15px;height:15px}
+
+/* barra de abas flutuante + câmera no meio */
+.tabs{position:fixed;z-index:45;bottom:calc(14px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:calc(var(--col) - 32px);
+  display:flex;justify-content:space-between;padding:7px 30px;border-radius:24px;
+  background:color-mix(in srgb,var(--surface) 86%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.tabs button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:6px 14px;border-radius:14px;position:relative;color:var(--muted);cursor:pointer}
+.tabs button svg{display:block;width:23px;height:23px}
+.tabs button.on{color:var(--accent)}
+.tabs .bdg{position:absolute;top:1px;right:6px;background:var(--warn);color:#fff;border-radius:10px;font-size:11px;padding:0 6px;line-height:17px;font-weight:700}
+.fab{position:fixed;z-index:46;left:50%;transform:translateX(-50%);bottom:calc(30px + env(safe-area-inset-bottom));width:62px;height:62px;border-radius:50%;border:4px solid var(--plane);
+  background:linear-gradient(150deg,var(--g1),var(--g2));color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 10px 24px color-mix(in srgb,var(--g1) 45%,transparent)}
+.fab svg{width:26px;height:26px;stroke:#fff;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.fab:active{transform:translateX(-50%) scale(.95)}
+
+/* folha de captura sobe de baixo */
+.sheet-bg{align-items:flex-end;padding:0;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+.sheet{max-width:var(--col);border-radius:26px 26px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));animation:up .24s cubic-bezier(.2,.8,.2,1)}
+.sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--axis);margin:0 auto 14px}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.chip{border-radius:20px;padding:8px 13px}
+.toast{bottom:calc(104px + env(safe-area-inset-bottom));border-radius:14px}
+</style>
+</head>
+<body>
+<main class="wrap" id="view"><div class="carregando">Carregando…</div></main>
+<script type="module">
+import { idDoLogin, derivarBits, importarChave, decifrar, paraObjeto, b64 } from './crypto.mjs?v=152fe29580';
+import { U, criarNucleo } from './app/nucleo.mjs?v=860d0c3f79';
+import { ICO, P, CI, TC, ic, COR, quemTag, pill, montarPecas, toast, verFoto, criarCaptura } from './app/ui.mjs?v=aa668677fe';
+
+const { fmt, esc, dCurto } = U;
+const $ = (s) => document.querySelector(s);
+const CHAVE_SESSAO = 'guarantee.sessao', CHAVE_ENVIADAS = 'guarantee.enviadas', CHAVE_LOGIN = 'guarantee.login';
+const guarda = {
+  ler(k, d) { try { const v = localStorage.getItem(k) ?? sessionStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  gravar(k, v, local = true) { try { (local ? localStorage : sessionStorage).setItem(k, JSON.stringify(v)); } catch { /* modo privado */ } },
+  apagar(k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch { /* idem */ } },
+};
+
+let META, L, N, K, EU; // EU = { login, nome }
+const st = { page: 'notas', mes: U.hoje().slice(0, 7), aberto: new Set() };
+
+// ---------------------------------------------------------------- login
+const LOGO = '<svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>';
+function telaLogin(msg = '') {
+  $('#view').className = '';
+  $('#view').innerHTML = `<div class="login"><div class="lg-hero"><div class="lgo">${LOGO}</div><h1>Guarantee</h1><p>Notas dos cartões e conferência do mês</p></div>
+    <form class="lg-form" id="fLogin" autocomplete="on">
+      <label class="fld"><span>Login</span><input class="inp" id="lLogin" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" value="${esc(guarda.ler(CHAVE_LOGIN, ''))}"></label>
+      <label class="fld"><span>Senha</span><input class="inp" id="lSenha" name="password" type="password" autocomplete="current-password"></label>
+      <label class="lembrar"><input type="checkbox" id="lLembrar" checked> Lembrar neste celular</label>
+      <button class="sh-send" id="lBtn" type="submit">Entrar</button>
+      <div class="lg-erro" id="lErro">${esc(msg)}</div>
+    </form>
+    <div class="lg-pe">${P('<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>')}Os dados viajam cifrados e só abrem com a sua senha</div></div>`;
+  $('#fLogin').addEventListener('submit', entrar);
+  (guarda.ler(CHAVE_LOGIN, '') ? $('#lSenha') : $('#lLogin')).focus();
+}
+async function entrar(e) {
+  e.preventDefault();
+  const login = $('#lLogin').value.trim().toLowerCase(), senha = $('#lSenha').value, lembrar = $('#lLembrar').checked;
+  if (!login || !senha) { $('#lErro').textContent = 'Preencha login e senha.'; return; }
+  $('#lBtn').disabled = true; $('#lBtn').textContent = 'Abrindo…'; $('#lErro').textContent = '';
+  try {
+    const env = META.usuarios[await idDoLogin(login)];
+    if (!env) throw new Error('x');
+    const kek = await importarChave(await derivarBits(senha, b64.to(env.salt)));
+    const ac = paraObjeto(await decifrar(kek, env));
+    guarda.gravar(CHAVE_LOGIN, login);
+    guarda.gravar(CHAVE_SESSAO, { login: ac.login, nome: ac.nome, k: ac.k, idChave: META.idChave }, lembrar);
+    await abrir(ac);
+  } catch (err) {
+    $('#lBtn').disabled = false; $('#lBtn').textContent = 'Entrar';
+    $('#lErro').textContent = err.message === 'x' || err.name === 'OperationError' ? 'Login ou senha não conferem.' : 'Não consegui abrir: ' + err.message;
+  }
+}
+async function abrir(ac) {
+  K = await importarChave(b64.to(ac.k));
+  EU = { login: ac.login, nome: ac.nome };
+  L = paraObjeto(await decifrar(K, await (await fetch('data/ledger.enc', { cache: 'no-store' })).json()));
+  N = criarNucleo(L);
+  limparEnviadas();
+  $('#view').className = 'wrap';
+  draw();
+}
+function sair() {
+  guarda.apagar(CHAVE_SESSAO); K = L = N = EU = null;
+  $('.tabs')?.remove(); $('.fab')?.remove(); telaLogin();
+}
+
+// ---------------------------------------------------------------- fotos cifradas
+const fotos = new Map();
+async function urlFoto(arquivo) {
+  if (!arquivo) return '';
+  if (!fotos.has(arquivo)) fotos.set(arquivo, (async () => {
+    const env = await (await fetch('data/fotos/' + encodeURIComponent(arquivo) + '.enc')).json();
+    const ext = arquivo.split('.').pop().toLowerCase();
+    const mime = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', pdf: 'application/pdf' }[ext] || 'image/jpeg';
+    return URL.createObjectURL(new Blob([await decifrar(K, env)], { type: mime }));
+  })().catch(() => { fotos.delete(arquivo); return ''; }));
+  return fotos.get(arquivo);
+}
+function carregarMiniaturas() {
+  document.querySelectorAll('img[data-foto]').forEach(async (img) => { const u = await urlFoto(img.dataset.foto); if (u) { img.src = u; img.removeAttribute('data-foto'); } });
+}
+
+// ---------------------------------------------------------------- envio
+const enviadas = () => guarda.ler(CHAVE_ENVIADAS, []);
+function limparEnviadas() {
+  const recebidas = new Set(L.notas.map((n) => n.uid).filter(Boolean));
+  const resto = enviadas().filter((e) => !recebidas.has(e.uid) && e.login === EU.login);
+  guarda.gravar(CHAVE_ENVIADAS, resto);
+}
+function miniatura(img) {
+  const c = document.createElement('canvas'), k = 96 / Math.max(img.width, img.height);
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', 0.6);
+}
+async function cifrarParaEnvio(conteudo) {
+  const ALG = { name: 'RSA-OAEP', hash: 'SHA-256' };
+  const publica = await crypto.subtle.importKey('jwk', META.envio.publica, ALG, false, ['encrypt']);
+  const aes = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aes, new TextEncoder().encode(JSON.stringify(conteudo)));
+  const bruta = await crypto.subtle.exportKey('raw', aes);
+  return { v: 1, alg: 'RSA-OAEP-3072+AES-256-GCM', chave: b64.from(await crypto.subtle.encrypt(ALG, publica, bruta)), iv: b64.from(iv), ct: b64.from(ct) };
+}
+async function enviarNota(d) {
+  if (!META.envio) throw new Error('O envio de notas ainda não foi ligado. Peça ao Miguel.');
+  const uid = crypto.randomUUID();
+  const conteudo = { tipo: 'nota', uid, autor: EU.login, estab: d.estab, valor: d.valor, data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: d.lanc || null, chave: d.chave || '', enviadoEm: new Date().toISOString(), foto: { mime: d.foto.mime, dataB64: d.foto.dataB64 } };
+  const pacote = await cifrarParaEnvio(conteudo);
+  let r;
+  try { r = await fetch(META.envio.url + '/enviar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pacote) }); }
+  catch { throw new Error('Sem conexão. A nota não foi enviada — tente de novo.'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.erro || `O recebedor respondeu ${r.status}. Tente de novo.`);
+  const lista = enviadas();
+  lista.push({ uid, login: EU.login, estab: d.estab, valor: d.valor, data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: d.lanc || null, enviadoEm: conteudo.enviadoEm, mini: d.foto.img ? miniatura(d.foto.img) : '' });
+  guarda.gravar(CHAVE_ENVIADAS, lista);
+  return 'Nota enviada ✓ — entra no sistema quando o Miguel abrir o painel';
+}
+
+// ---------------------------------------------------------------- telas
+/** Listas mostram só os cartões da pessoa; para enviar, quem não tem cartão próprio escolhe entre todos. */
+const meusCartoes = () => L.contas.filter((x) => x.tipo === 'cartao' && x.dono === EU.login);
+const cartoesEnvio = () => { const m = meusCartoes(); return m.length ? m : L.contas.filter((x) => x.tipo === 'cartao'); };
+/** Ícone da categoria com a miniatura da nota (decifrada depois de desenhar). */
+const icFoto = (cat, arquivo) => arquivo ? ic(cat).slice(0, -7) + `<img data-foto="${esc(arquivo)}" alt=""></span>` : ic(cat);
+const vazio = (t) => `<div class="empty">${P('<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>')}${esc(t)}</div>`;
+
+function topo() {
+  const m = st.mes;
+  return `<div class="top"><span class="who" style="background:${COR[EU.login] || 'var(--accent)'}">${esc((EU.nome || EU.login)[0])}</span>
+    <div class="hi"><div class="hi-s">Olá,</div><div class="hi-n">${esc(EU.nome || EU.login)}</div></div>
+    <div class="mes"><button data-a="mes" data-v="-1" aria-label="Mês anterior">${ICO.prev}</button><span>${U.mesLabel(m)}</span><button data-a="mes" data-v="1" aria-label="Próximo mês">${ICO.next}</button></div></div>`;
+}
+
+function paginaNotas() {
+  const m = st.mes, ids = new Set(meusCartoes().map((c) => c.id)), meu = (c) => ids.has(c);
+  const env = enviadas(), envLanc = new Set(env.map((e) => e.lanc).filter(Boolean));
+  const ag = N.aguardando().filter((n) => meu(n.cartao));
+  const sn = N.semNota(m).filter((l) => meu(l.conta));
+  const ok = N.casadas(m).filter((n) => meu(n.cartao));
+  const compras = L.lanc.filter((l) => N.ehCartao(l) && N.emRes(l) && l.comp === m && meu(l.conta));
+  const com = compras.filter((l) => l.nota || envLanc.has(l.id)).length, tot = compras.length;
+  const hero = tot
+    ? `<div class="h-k">Notas de ${U.mesNome(m)}</div><div class="h-big">${com} de ${tot}<small>compras com nota</small></div>
+      <div class="h-bar"><i style="width:${Math.round(com / tot * 100)}%"></i></div>
+      <div class="h-sub">${com === tot ? 'Tudo com nota — o contador agradece ✓' : `Faltam ${tot - com} — anexe a foto aí embaixo`}</div>`
+    : `<div class="h-k">Notas de ${U.mesNome(m)}</div><div class="h-big">${ag.length + env.length}<small>${ag.length + env.length === 1 ? 'nota guardada' : 'notas guardadas'}</small></div>
+      <div class="h-sub">A fatura ainda não chegou. Quando chegar, cada nota encontra sua compra sozinha.</div>`;
+  const nota = (n) => { const l = n.lanc && N.lanc(n.lanc); return `<div class="row click" data-a="foto" data-v="${esc(n.foto || '')}">${icFoto(n.cat, n.foto)}
+    <div class="m"><div class="t">${esc(n.estab || 'Sem nome')}</div><div class="s">${dCurto(n.data)} · ${esc(N.quemTxt(n.quem))}</div></div>
+    <div class="vcol"><div class="v">${fmt(n.valor)}</div><span class="pill ${l ? 'ok' : 'wait'}">${l ? 'na fatura' : 'aguardando'}</span></div></div>`; };
+  const enviada = (e) => { const l = e.lanc && N.lanc(e.lanc); return `<div class="row">${ic(e.cat || (l && l.cat), '', e.mini)}
+    <div class="m"><div class="t">${esc(e.estab || (l && l.desc) || 'Nota')}</div><div class="s">${dCurto(e.data)} · enviada ${dCurto(e.enviadoEm.slice(0, 10))}</div></div>
+    <div class="vcol"><div class="v">${fmt(e.valor)}</div><span class="pill n">a caminho</span></div></div>`; };
+
+  return topo() + `<div class="hero">${hero}<button class="h-cam" data-a="cam">${ICO.cam} Fotografar nota</button></div>
+  ${sn.length ? `<div class="sec"><div class="sec-h"><h3>Sem nota <span class="cnt warn">${sn.filter((l) => !envLanc.has(l.id)).length}</span></h3></div><div class="card alert">
+    ${sn.map((l) => `<div class="row">${ic(l.cat)}<div class="m"><div class="t">${esc(l.desc)}</div><div class="s">${dCurto(l.venc)} · ${fmt(l.valor)}</div></div>${envLanc.has(l.id) ? '<span class="pill n">foto enviada</span>' : `<button class="btn-foto" data-a="anexar" data-v="${l.id}">${ICO.cam}Foto</button>`}</div>`).join('')}</div></div>` : ''}
+  ${env.length ? `<div class="sec"><div class="sec-h"><h3>Enviadas <span class="cnt">${env.length}</span></h3><span class="r">entram no próximo painel</span></div><div class="card">${env.slice().reverse().map(enviada).join('')}</div></div>` : ''}
+  <div class="sec"><div class="sec-h"><h3>Esperando a fatura <span class="cnt">${ag.length}</span></h3></div>
+    <div class="card">${ag.map(nota).join('') || vazio('Nenhuma nota esperando')}</div></div>
+  <div class="sec"><div class="sec-h"><h3>Já na fatura <span class="cnt">${ok.length}</span></h3><span class="r">${U.mesNome(m)}</span></div>
+    <div class="card">${ok.map(nota).join('') || vazio('Nenhuma neste mês')}</div></div>`;
+}
+
+function paginaConferir() {
+  const m = st.mes, R = N.resumoMes(m), so = N.sociosMes(m), rec = N.receitas(m), sai = N.saidasPorCat(m);
+  const pct = R.rec + R.saida > 0 ? Math.round(R.rec / (R.rec + R.saida) * 100) : 50, mx = Math.max(1, ...sai.map((g) => g.v));
+  return topo() + `<div class="res"><div class="h-k">Resultado de ${U.mesNome(m)}</div>
+      <div class="h-big" style="color:${R.res < 0 ? '#ff8a8a' : '#fff'}">${fmt(R.res)}</div>
+      <div class="io"><div><div class="l"><i style="background:#2dd4bf"></i>Entrou</div><div class="n">${fmt(R.rec)}</div></div>
+        <div><div class="l"><i style="background:#e66767"></i>Saiu</div><div class="n">${fmt(R.saida)}</div></div></div>
+      <div class="split"><i style="width:${pct}%"></i></div></div>
+  <div class="socs">${Object.keys(L.socios).map((k) => `<div class="soc" style="--c:${COR[k] || 'var(--accent)'}"><div class="hd2"><span class="av">${esc(N.SOC[k][0])}</span>${esc(N.SOC[k])}</div>
+    <div class="k">Resultado do mês</div><div class="v" style="${so[k].res < 0 ? 'color:var(--bad)' : ''}">${fmt(so[k].res)}</div>
+    <div class="k">Pode retirar</div><div class="v ret">${fmt(so[k].saldo)}</div></div>`).join('')}</div>
+  <div class="sec"><div class="sec-h"><h3>Entrou</h3><span class="r">${fmt(R.rec)}</span></div><div class="card">
+    ${rec.map((l) => `<div class="row">${ic(l.cat)}<div class="m"><div class="t">${esc((N.cli(l.cliente) || {}).nome || l.desc)}</div><div class="s">${esc(l.desc)}</div></div>
+      <div class="vcol"><div class="v">${fmt(l.valor)}</div>${pill(N, l)}</div></div>`).join('') || vazio('Nada entrou neste mês')}</div></div>
+  <div class="sec"><div class="sec-h"><h3>Saiu</h3><span class="r">${fmt(R.saida)}</span></div><div class="card">
+    ${sai.map((g) => { const on = st.aberto.has(g.cat), t = (CI[g.cat] || CI.outras)[0]; return `<div class="row click" data-a="cat" data-v="${g.cat}">${ic(g.cat)}
+      <div class="m"><div class="t">${esc(g.nome)}</div><div class="bar-c" style="color:${TC[t]}"><i style="width:${Math.round(g.v / mx * 100)}%"></i></div></div>
+      <div class="v">${fmt(g.v)}</div>${ICO.chev.replace('class="chev"', 'class="chev' + (on ? ' on' : '') + '"')}</div>` +
+      (on ? g.itens.map((l) => `<div class="row sub"><div class="m"><div class="t">${esc(l.desc)} ${quemTag(N, l)}</div><div class="s">${l.pago ? 'pago ' + dCurto(l.pago) : 'a pagar · ' + dCurto(l.venc)}${N.ehCartao(l) ? (l.nota ? ' · nota ✓' : ' · sem nota') : ''}</div></div><div class="v" style="font-weight:550">${fmt(l.valor)}</div></div>`).join('') : ''); }).join('') || vazio('Nada saiu neste mês')}</div></div>
+  <div class="ro">${ICO.lock}Só para conferir · lançar e corrigir é no computador</div>
+  <div class="atual">Dados de ${L.geradoEm ? new Date(L.geradoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</div>
+  <button class="sair" data-a="sair">${ICO.sair}Sair deste celular</button>`;
+}
+
+function barra() {
+  if (!$('.tabs')) {
+    document.body.insertAdjacentHTML('beforeend', `<nav class="tabs"></nav><button class="fab" data-a="cam" aria-label="Fotografar nota">${ICO.cam}</button>`);
+  }
+  const ids = new Set(meusCartoes().map((c) => c.id)), envL = new Set(enviadas().map((e) => e.lanc));
+  const b = N.semNota(st.mes).filter((l) => ids.has(l.conta) && !envL.has(l.id)).length;
+  $('.tabs').innerHTML = `<button data-a="tab" data-v="notas" class="${st.page === 'notas' ? 'on' : ''}">${ICO.nota}Notas${b ? `<span class="bdg">${b}</span>` : ''}</button>
+    <button data-a="tab" data-v="conf" class="${st.page === 'conf' ? 'on' : ''}">${ICO.chart}Conferir</button>`;
+}
+function draw() {
+  if (!N) return;
+  $('#view').innerHTML = st.page === 'conf' ? paginaConferir() : paginaNotas();
+  barra(); carregarMiniaturas();
+}
+
+const captura = criarCaptura({ N: () => N, autor: () => EU.login, cartoes: cartoesEnvio, enviar: enviarNota, depois: draw });
+
+document.addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-a]'); if (!el || !N) return;
+  const v = el.dataset.v;
+  switch (el.dataset.a) {
+    case 'tab': st.page = v; scrollTo(0, 0); break;
+    case 'mes': st.mes = U.addMes(st.mes, +v); break;
+    case 'cat': st.aberto.has(v) ? st.aberto.delete(v) : st.aberto.add(v); break;
+    case 'cam': if (!META.envio) { toast('O envio de notas ainda não foi ligado.'); return; } captura.nova(); return;
+    case 'anexar': if (!META.envio) { toast('O envio de notas ainda não foi ligado.'); return; } captura.anexar(v); return;
+    case 'foto': { if (!v) return; const u = await urlFoto(v); if (u) verFoto(u); else toast('Não consegui abrir a foto'); return; }
+    case 'sair': sair(); return;
+    default: return;
+  }
+  draw();
+});
+
+// ---------------------------------------------------------------- início
+montarPecas();
+try {
+  META = await (await fetch('data/meta.json', { cache: 'no-store' })).json();
+  const s = guarda.ler(CHAVE_SESSAO, null);
+  if (s && s.idChave === META.idChave) { try { await abrir(s); } catch { guarda.apagar(CHAVE_SESSAO); telaLogin('Sessão expirada. Entre de novo.'); } }
+  else { if (s) guarda.apagar(CHAVE_SESSAO); telaLogin(s ? 'O acesso mudou. Entre de novo.' : ''); }
+} catch (e) {
+  $('#view').innerHTML = `<div class="carregando">Site ainda sem dados publicados.</div>`;
+}
+</script>
+</body>
+</html>

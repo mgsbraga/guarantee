@@ -1,0 +1,15 @@
+# ============================================================
+# NADA DE DADO EM CLARO VAI PARA O GIT
+# ============================================================
+local/
+*.local.json
+.secrets.json
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
+node_modules/
+
+# cache local do wrangler (traz id e nome da conta Cloudflare)
+.wrangler/

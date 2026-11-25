@@ -1,0 +1,39 @@
+/* Componentes comuns ao painel (PC) e ao site (celular). Base em base.css. */
+:root{--g1:#0f766e;--g2:#1f5fb4}
+body{padding-bottom:0}
+.gbtn{border:0;border-radius:14px;padding:11px 18px;background:linear-gradient(150deg,var(--g1),var(--g2));color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 20px color-mix(in srgb,var(--g1) 28%,transparent)}
+.gbtn:disabled{opacity:.5;cursor:default}
+.gbtn svg,.btn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.btn{border-radius:12px}
+.card{border-radius:20px}
+.cnt{font-size:11.5px;font-weight:750;min-width:20px;height:20px;padding:0 6px;border-radius:10px;display:inline-grid;place-items:center;background:var(--surface-2);color:var(--ink-2)}
+.cnt.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap}
+.pill.ok{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}
+.pill.wait{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.pill.no{background:color-mix(in srgb,var(--bad) 13%,transparent);color:var(--bad)}
+.pill.n{background:var(--surface-2);color:var(--ink-2)}
+.pill.rv{background:color-mix(in srgb,var(--purple) 14%,transparent);color:var(--purple)}
+.vcol{text-align:right;flex:none}
+.vcol .pill{margin-top:3px}
+.ic{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;flex:none;position:relative}
+.ic svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ic.sm{width:30px;height:30px;border-radius:9px}.ic.sm svg{width:16px;height:16px}
+.ic.g{background:var(--accent-soft);color:var(--accent)}
+.ic.b{background:var(--series-soft);color:var(--series)}
+.ic.p{background:var(--purple-soft);color:var(--purple)}
+.ic.o{background:color-mix(in srgb,var(--warn) 17%,transparent);color:var(--warn)}
+.ic.r{background:color-mix(in srgb,var(--bad) 14%,transparent);color:var(--bad)}
+.ic.n{background:var(--surface-2);color:var(--ink-2)}
+.ic img{position:absolute;right:-5px;bottom:-5px;width:20px;height:25px;border-radius:4px;object-fit:cover;border:2px solid var(--surface);background:#fff}
+.bar-c{height:5px;border-radius:3px;background:var(--surface-2);margin-top:6px;overflow:hidden}
+.bar-c i{display:block;height:100%;border-radius:3px;background:currentColor;opacity:.75}
+.empty{padding:26px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.empty svg{width:30px;height:30px;stroke:var(--axis);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ok-all{padding:26px 18px;text-align:center;color:var(--good);font-weight:700}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.inp{border-radius:14px}
+select.inp{appearance:auto}
+.sh-send{border-radius:16px;background:linear-gradient(150deg,var(--g1),var(--g2));box-shadow:0 8px 20px color-mix(in srgb,var(--g1) 30%,transparent)}
+.thumb{cursor:zoom-in}
+.carregando{display:grid;place-items:center;min-height:60vh;color:var(--muted)}
