@@ -162,6 +162,23 @@ async function acharQR(img) {
 }
 async function lerQR(img) { const t = await acharQR(img); return t ? interpretarQR(t) : null; }
 
+// ---------------------------------------------------------------- folhas por cima da página
+
+// Enquanto uma folha está aberta, a página de fundo fica presa no lugar. Ao fechar, o campo
+// perde o foco (o teclado some) e a página volta exatamente para onde estava — sem isso o
+// iPhone fica com a tela deslocada e os toques caem fora de onde a pessoa tocou.
+const travas = new Set(); let travadaEm = 0;
+export function travarFundo(quem) {
+  if (!travas.size) { travadaEm = window.scrollY; Object.assign(document.body.style, { position: 'fixed', top: -travadaEm + 'px', left: '0', right: '0' }); }
+  travas.add(quem);
+}
+export function destravarFundo(quem) {
+  if (!travas.delete(quem) || travas.size) return;
+  document.activeElement?.blur?.();
+  Object.assign(document.body.style, { position: '', top: '', left: '', right: '' });
+  window.scrollTo(0, travadaEm);
+}
+
 /**
  * Folha de captura de nota.
  * cfg: { N:()=>nucleo, autor:()=>login, cartoes:()=>[contas], enviar: async(dados)=>msg, depois:()=>void }
@@ -172,25 +189,9 @@ export function criarCaptura(cfg) {
   let cap = null, ocupado = false;
   const bg = $('#gSheet'), el = bg.firstElementChild;
 
-  // Enquanto a folha está aberta, a página de fundo fica presa no lugar. Ao fechar, o campo
-  // perde o foco (o teclado some) e a página volta exatamente para onde estava — sem isso o
-  // iPhone fica com a tela deslocada e os toques caem fora de onde a pessoa tocou.
-  let travadaEm = null;
-  function travar() {
-    if (travadaEm !== null) return;
-    travadaEm = window.scrollY;
-    Object.assign(document.body.style, { position: 'fixed', top: -travadaEm + 'px', left: '0', right: '0' });
-  }
-  function destravar() {
-    if (travadaEm === null) return;
-    document.activeElement?.blur?.();
-    Object.assign(document.body.style, { position: '', top: '', left: '', right: '' });
-    window.scrollTo(0, travadaEm); travadaEm = null;
-  }
-
   function desenhar() {
-    if (!cap) { bg.classList.remove('show'); destravar(); return; }
-    travar(); bg.classList.add('show');
+    if (!cap) { bg.classList.remove('show'); destravarFundo('captura'); return; }
+    travarFundo('captura'); bg.classList.add('show');
     if (cap.step === 'lendo' || ocupado) { el.innerHTML = `<div class="sh-load"><div class="spin"></div><b>${ocupado ? 'Enviando…' : 'Lendo a nota…'}</b></div>`; return; }
     const N = cfg.N(), me = cfg.autor(), linha = cap.lanc && N.lanc(cap.lanc);
     const cats = ['combust', 'alim', 'viagem', 'software', 'outras'];

@@ -190,7 +190,7 @@ code{font-size:12.5px;background:var(--surface-2);padding:1px 6px;border-radius:
 <div class="dr-bg" id="dr"><div class="drawer" id="drIn"></div></div>
 <input type="file" id="arq" accept=".csv,text/csv" hidden>
 <script type="module">
-import { U, CATS, GRUPOS, criarNucleo, lerExtratoCSV, lerFaturaCSV, aplicarExtrato, aplicarFatura, r2 } from '/app/nucleo.mjs';
+import { U, CATS, GRUPOS, criarNucleo, lerExtratoCSV, lerFaturaCSV, aplicarExtrato, aplicarFatura, registrarNota, migrarNotas, excluirNota, r2 } from '/app/nucleo.mjs';
 import { ICO, P, CI, TC, tom, ic, COR, quemTag, pill, montarPecas, toast, verFoto, criarCaptura } from '/app/ui.mjs';
 
 const TOKEN = '__TOKEN__';
@@ -320,8 +320,9 @@ function paginaLanc() {
 }
 
 function drawer() {
-  const bg = $('#dr'); if (!st.edit) { bg.classList.remove('show'); return; }
+  const bg = $('#dr'); if (!st.edit && !st.notaVer) { bg.classList.remove('show'); return; }
   bg.classList.add('show');
+  if (!st.edit && st.notaVer) { const n = N.nota(st.notaVer); if (!n) { st.notaVer = null; bg.classList.remove('show'); return; } $('#drIn').innerHTML = gavetaNota(n); return; }
   const l = st.edit === 'novo' ? { id: null, cat: 'outras', desc: '', valor: 0, conta: 'cora', comp: st.mes, venc: st.mes + '-' + U.hoje().slice(8), pago: null } : N.lanc(st.edit);
   if (!l) { st.edit = null; bg.classList.remove('show'); return; }
   const qv = N.quemDe(l), nota = l.nota && N.nota(l.nota);
@@ -337,9 +338,9 @@ function drawer() {
   <div class="tw"><label class="fld"><span>Competência</span><input class="inp" type="month" id="fComp" value="${l.comp}"></label>
     <label class="fld"><span>Vencimento / data</span><input class="inp" type="date" id="fVenc" value="${l.venc || ''}"></label></div>
   <label class="fld"><span>${N.grupo(l) === 'receita' ? 'Recebido em' : 'Pago em'} (vazio = em aberto)</span><input class="inp" type="date" id="fPago" value="${l.pago || ''}"></label>
-  ${l.id && N.ehCartao(l) ? (nota ? `<div class="ph"><img src="${fotoUrl(nota)}" data-a="foto" data-v="${nota.id}"><div style="flex:1"><b>Nota anexada</b><div class="nf">${esc(nota.estab)} · ${esc(N.SOC[nota.autor] || nota.autor)}</div></div><button class="btn sm" data-a="desligar" data-v="${l.id}">Soltar</button></div>`
+  ${l.id && N.ehCartao(l) ? (nota ? `<div class="ph"><img src="${fotoUrl(nota)}" data-a="foto" data-v="${nota.id}"><div style="flex:1"><b>Nota anexada</b><div class="nf">${esc(nota.estab)} · ${esc(N.SOC[nota.autor] || nota.autor)}</div></div>${l.origem === 'nota' ? `<button class="btn sm" data-a="verNota" data-v="${nota.id}">Ver nota</button>` : `<button class="btn sm" data-a="desligar" data-v="${l.id}">Soltar</button>`}</div>`
     : `<div class="ph"><span class="pill wait">sem nota</span><div class="nf" style="flex:1">O contador pede comprovante</div><button class="btn sm" data-a="anexar" data-v="${l.id}">Anexar foto</button></div>`) : ''}
-  <div class="dr-act">${l.id ? '<button class="del" data-a="del">Excluir</button>' : ''}<button class="btn" data-a="fechar">Cancelar</button><button class="gbtn" data-a="salvarL">Salvar</button></div>`;
+  <div class="dr-act">${l.id ? `<button class="del" data-a="del">${l.origem === 'nota' && l.nota ? 'Excluir (e a nota)' : 'Excluir'}</button>` : ''}<button class="btn" data-a="fechar">Cancelar</button><button class="gbtn" data-a="salvarL">Salvar</button></div>`;
 }
 function salvarLanc() {
   const v = r2(U.parseBR($('#fVal').value)); if (!(v > 0)) { toast('Informe o valor'); return; }
@@ -362,9 +363,9 @@ function paginaImp() {
       <div class="drop" data-drop="extrato">${I.up}<div class="t1">Solte aqui o CSV do extrato</div><div class="t2">ou escolha o arquivo · formato da Cora: Data, Transação, Tipo, Identificação, Valor</div>
         <div class="sel"><select class="inp" id="impConta">${bancos().map((c) => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select></div>
         <button class="gbtn" data-a="escolher" data-v="extrato">${I.up}Escolher arquivo</button></div></div>
-    <div class="card imp"><h3>Fatura do cartão</h3><p class="d">Cada compra vira lançamento do dono do cartão; as notas guardadas encontram a compra sozinhas (mesmo cartão, mesmo valor, até 3 dias).</p>
+    <div class="card imp"><h3>Fatura do cartão</h3><p class="d">Compra que já entrou pela nota é só conferida (mesmo cartão, mesmo valor, até 3 dias); o resto entra como compra nova, sem nota.</p>
       <div style="margin-top:12px">${cartoes().map((c) => `<div class="src">${ic('fatura')}<div class="m"><b>${esc(c.nome)}</b> ${c.dono ? `<span class="tag ${c.dono === 'miguel' ? 'm' : 'a'}">${esc(N.SOC[c.dono] || c.dono)}</span>` : ''}<div class="s">${L.faturas[c.id] ? 'última fatura: ' + U.mesLabel(L.faturas[c.id]) : 'nenhuma fatura importada'}</div></div></div>`).join('') || '<div class="nf">Cadastre os cartões em Ajustes.</div>'}</div>
-      <div class="drop" data-drop="fatura">${I.up}<div class="t1">Solte aqui o CSV da fatura</div><div class="t2">colunas: data, descrição, valor · ${ag} nota${ag === 1 ? '' : 's'} esperando</div>
+      <div class="drop" data-drop="fatura">${I.up}<div class="t1">Solte aqui o CSV da fatura</div><div class="t2">colunas: data, descrição, valor · ${ag} nota${ag === 1 ? '' : 's'} a conferir</div>
         <div class="sel"><select class="inp" id="impCartao">${cartoes().map((c) => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select><input class="inp" type="month" id="impMes" value="${U.hoje().slice(0, 7)}" title="Mês da fatura"></div>
         <button class="gbtn" data-a="escolher" data-v="fatura"${cartoes().length ? '' : ' disabled'}>${I.up}Escolher arquivo</button></div></div>
   </div>
@@ -386,7 +387,7 @@ async function importarArquivo(tipo, file) {
       const cartao = $('#impCartao').value, mes = $('#impMes').value, linhas = lerFaturaCSV(txt);
       if (!linhas.length) { toast('Nenhuma compra encontrada no arquivo.'); return; }
       const r = aplicarFatura(L, cartao, mes, linhas, novoId);
-      await salvar(`Fatura ${N.conta(cartao).nome}: ${r.novos} compras${r.repetidos ? ` · ${r.repetidos} já importadas` : ''} · ${r.casadas} nota${r.casadas === 1 ? '' : 's'} casaram`);
+      await salvar(`Fatura ${N.conta(cartao).nome}: ${r.conferidas} conferida${r.conferidas === 1 ? '' : 's'} com notas · ${r.novos} compra${r.novos === 1 ? '' : 's'} nova${r.novos === 1 ? '' : 's'} sem nota${r.repetidos ? ` · ${r.repetidos} já importadas` : ''}`);
     }
   } catch (e) { toast(e.message, 6000); }
 }
@@ -395,16 +396,34 @@ async function importarArquivo(tipo, file) {
 function paginaNotas() {
   const m = st.mes, ag = N.aguardando(), ok = N.casadas(m), sn = N.semNota(m);
   const lista = st.nf === 'ag' ? ag : st.nf === 'ok' ? ok : st.nf === 'sem' ? [] : [...ag, ...ok];
-  const F = [['todas', 'Todas', ag.length + ok.length], ['ag', 'Esperando a fatura', ag.length], ['ok', 'Já na fatura', ok.length], ['sem', 'Compras sem nota', sn.length]];
-  return topo('Notas', 'Fotos das notas dos cartões — tiradas no celular, conferidas aqui', `<button class="gbtn" data-a="cam"${cartoes().length ? '' : ' disabled'}>${I.cam}Adicionar nota</button>`) +
+  const F = [['todas', 'Todas', ag.length + ok.length], ['ag', 'A conferir com a fatura', ag.length], ['ok', 'Conferidas', ok.length], ['sem', 'Compras sem nota', sn.length]];
+  return topo('Notas', 'A nota entra na hora como compra do cartão; a fatura, quando chega, confere', `<button class="gbtn" data-a="cam"${cartoes().length ? '' : ' disabled'}>${I.cam}Adicionar nota</button>`) +
   `<div class="toolbar">${F.map(([id, n, c]) => `<button class="chipf${st.nf === id ? ' on' : ''}" data-a="nf" data-v="${id}">${n} <span class="c">${c}</span></button>`).join('')}</div>
-  ${st.nf === 'sem' || st.nf === 'todas' ? (sn.length ? `<div class="card" style="margin-bottom:18px;border-color:color-mix(in srgb,var(--warn) 35%,transparent)"><div class="ch"><h3>Compras sem nota em ${U.mesNome(m)} <span class="cnt warn">${sn.length}</span></h3><span class="r">o contador pede comprovante</span></div>
+  ${st.nf === 'sem' || st.nf === 'todas' ? (sn.length ? `<div class="card" style="margin-bottom:18px;border-color:color-mix(in srgb,var(--warn) 35%,transparent)"><div class="ch"><h3>Compras da fatura sem nota em ${U.mesNome(m)} <span class="cnt warn">${sn.length}</span></h3><span class="r">o contador pede comprovante</span></div>
       ${sn.map((l) => `<div class="row">${ic(l.cat, 'sm')}<div class="m"><div class="t">${esc(l.desc)}</div><div class="s">${dCurto(l.venc)} · ${esc(N.conta(l.conta).nome)}</div></div><div class="v">${fmt(l.valor)}</div><button class="btn sm" data-a="anexar" data-v="${l.id}">Anexar foto</button></div>`).join('')}</div>`
       : (st.nf === 'sem' ? '<div class="card"><div class="ok-all">✓ Todas as compras do mês têm nota</div></div>' : '')) : ''}
-  ${st.nf !== 'sem' ? (lista.length ? `<div class="gal">${lista.map((n) => { const l = n.lanc && N.lanc(n.lanc); return `<div class="nc" data-a="foto" data-v="${n.id}"><div class="im" style="background-image:url('${fotoUrl(n)}')"><span class="pill ${l ? 'ok' : 'wait'}">${l ? 'na fatura' : 'esperando fatura'}</span></div>
+  ${st.nf !== 'sem' ? (lista.length ? `<div class="gal">${lista.map((n) => { const okF = N.conferida(n); return `<div class="nc" data-a="verNota" data-v="${n.id}"><div class="im" style="background-image:url('${fotoUrl(n)}')"><span class="pill ${okF ? 'ok' : 'wait'}">${okF ? 'conferida' : 'a conferir c/ fatura'}</span></div>
       <div class="bd"><b>${esc(n.estab || 'Sem nome')}</b><div class="s">${dCurto(n.data)} · ${esc(N.conta(n.cartao).nome)} · ${esc(N.SOC[n.autor] || n.autor)}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="v">${fmt(n.valor)}</div>${ic(n.cat, 'sm')}</div><div class="s">${esc(N.quemTxt(n.quem))}</div></div></div>`; }).join('')}</div>`
     : `<div class="card">${vazio('Nenhuma nota aqui')}</div>`) : ''}`;
+}
+/** Gaveta com a nota: foto, dados, compra ligada e exclusão (em dois cliques). */
+function gavetaNota(n) {
+  const l = n.lanc && N.lanc(n.lanc), okF = N.conferida(n);
+  return `<h4>${esc(n.estab || 'Nota')}</h4><div class="nf" style="margin-top:2px">enviada por ${esc(N.SOC[n.autor] || n.autor || '—')}${n.recebidaEm ? ' · recebida ' + dCurto(n.recebidaEm.slice(0, 10)) : ''}</div>
+  ${n.foto ? `<img src="${fotoUrl(n)}" data-a="foto" data-v="${n.id}" style="display:block;width:100%;max-height:420px;object-fit:contain;background:#fff;border-radius:14px;margin-top:14px;cursor:zoom-in" alt="Foto da nota">` : ''}
+  <div class="duo" style="gap:10px;margin-top:14px">
+    <div><div class="nf">Valor</div><b style="font-size:18px">${fmt(n.valor)}</b></div><div><div class="nf">Data</div><b>${dCurto(n.data)}/${n.data.slice(0, 4)}</b></div>
+    <div><div class="nf">Cartão</div><b>${esc(N.conta(n.cartao).nome)}</b></div><div><div class="nf">Categoria · de quem</div><b>${esc(N.cat(n.cat).nome)}</b> · ${esc(N.quemTxt(n.quem) || '—')}</div></div>
+  <div class="ph"><span class="pill ${okF ? 'ok' : 'wait'}">${okF ? 'conferida' : 'a conferir c/ fatura'}</span><div class="nf" style="flex:1">${okF ? 'A fatura ' + (l && l.fatura ? 'de ' + U.mesLabel(l.fatura) + ' ' : '') + 'confirmou esta compra' + (l && l.descFatura ? ' (' + esc(l.descFatura) + ')' : '') : 'Já conta no resultado; a fatura confere quando chegar'}</div>
+    ${l ? `<button class="btn sm" data-a="edit" data-v="${l.id}">Abrir lançamento</button>` : ''}</div>
+  <div class="dr-act"><button class="del" data-a="excluirNota" data-v="${n.id}">${st.confirmar === n.id ? 'Confirmar exclusão' : 'Excluir nota'}</button><button class="btn" data-a="fechar">Fechar</button></div>
+  ${st.confirmar === n.id ? `<div class="aviso-rv">${l && l.origem === 'nota' && !l.fatura ? 'Apaga a nota, a foto e a compra que ela lançou.' : 'Apaga a nota e a foto; a compra da fatura continua, sem nota.'}</div>` : ''}`;
+}
+async function excluirNotaPainel(id) {
+  const r = excluirNota(L, id); if (!r) return;
+  if (r.foto) await api('/api/foto/apagar', { arquivo: r.foto });
+  st.notaVer = null; st.confirmar = null; st.edit = null; drawer(); await salvar('Nota excluída');
 }
 const captura = criarCaptura({
   N: () => N, autor: () => 'miguel', cartoes,
@@ -413,10 +432,10 @@ const captura = criarCaptura({
     if (!r.ok) throw new Error('Não consegui guardar a foto.');
     const n = { id: novoId('n'), autor: 'miguel', estab: d.estab, valor: r2(d.valor), data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: null, foto: r.arquivo, obs: '' };
     L.notas.push(n);
-    let msg;
-    if (d.lanc) { N.ligar(n, N.lanc(d.lanc)); msg = 'Nota anexada ✓'; }
-    else msg = N.casar() ? 'Nota guardada e já casou com a fatura ✓' : 'Nota guardada ✓ — casa quando a fatura chegar';
-    await salvar(); return msg;
+    if (d.lanc) N.ligar(n, N.lanc(d.lanc));
+    const como = registrarNota(L, n, novoId);
+    await salvar();
+    return d.lanc ? 'Nota anexada ✓' : como === 'conferida' ? 'Nota guardada e conferida com a fatura ✓' : 'Nota lançada ✓ — a fatura confere quando chegar';
   },
 });
 
@@ -501,7 +520,7 @@ function draw() {
   menu();
   const p = st.page;
   $('#view').innerHTML = p === 'lanc' ? paginaLanc() : p === 'imp' ? paginaImp() : p === 'notas' ? paginaNotas() : p === 'cont' ? paginaCont() : p === 'aj' ? paginaAj() : paginaPainel();
-  if (st.edit) drawer();
+  if (st.edit || st.notaVer) drawer();
 }
 let tipoArq = null;
 $('#arq').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; importarArquivo(tipoArq, f); });
@@ -510,7 +529,7 @@ document.addEventListener('dragleave', (e) => { const d = e.target.closest('[dat
 document.addEventListener('drop', (e) => { const d = e.target.closest('[data-drop]'); if (!d) return; e.preventDefault(); d.classList.remove('over'); importarArquivo(d.dataset.drop, e.dataTransfer.files[0]); });
 
 document.addEventListener('click', async (e) => {
-  if (e.target.id === 'dr') { st.edit = null; drawer(); return; }
+  if (e.target.id === 'dr') { st.edit = null; st.notaVer = null; st.confirmar = null; drawer(); return; }
   const el = e.target.closest('[data-a]'); if (!el) return;
   const v = el.dataset.v;
   switch (el.dataset.a) {
@@ -521,16 +540,19 @@ document.addEventListener('click', async (e) => {
     case 'flt': st.flt = v; break;
     case 'nf': st.nf = v; break;
     case 'verCat': st.page = 'lanc'; st.flt = 'out'; st.q = N.cat(v).nome; scrollTo(0, 0); break;
-    case 'edit': st.edit = v; drawer(); return;
+    case 'edit': st.edit = v; st.notaVer = null; st.confirmar = null; drawer(); return;
+    case 'verNota': st.notaVer = v; st.edit = null; st.confirmar = null; drawer(); return;
+    case 'excluirNota': if (st.confirmar === v) excluirNotaPainel(v); else { st.confirmar = v; drawer(); } return;
     case 'novo': st.edit = 'novo'; drawer(); return;
-    case 'fechar': st.edit = null; drawer(); return;
+    case 'fechar': st.edit = null; st.notaVer = null; st.confirmar = null; drawer(); return;
     case 'salvarL': salvarLanc(); return;
-    case 'del': { const i = L.lanc.findIndex((l) => l.id === st.edit); if (i >= 0) { const l = L.lanc[i]; if (l.nota) { const n = N.nota(l.nota); if (n) n.lanc = null; } L.lanc.splice(i, 1); } st.edit = null; drawer(); salvar('Lançamento excluído'); return; }
+    case 'del': { const l = N.lanc(st.edit); if (l && l.origem === 'nota' && l.nota && N.nota(l.nota)) { excluirNotaPainel(l.nota); return; }
+      const i = L.lanc.findIndex((x) => x.id === st.edit); if (i >= 0) { const x = L.lanc[i]; if (x.nota) { const n = N.nota(x.nota); if (n) n.lanc = null; } L.lanc.splice(i, 1); } st.edit = null; drawer(); salvar('Lançamento excluído'); return; }
     case 'desligar': { const l = N.lanc(v), n = l && N.nota(l.nota); if (n) n.lanc = null; if (l) delete l.nota; salvar('Nota solta — volta a esperar a fatura'); return; }
     case 'pagar': { const l = N.lanc(v); if (l) { l.pago = l.venc < U.hoje() ? l.venc : U.hoje(); salvar((N.grupo(l) === 'receita' ? 'Recebido: ' : 'Pago: ') + l.desc); } return; }
     case 'irImportar': st.page = 'imp'; break;
     case 'escolher': tipoArq = v; $('#arq').click(); return;
-    case 'puxar': { el.disabled = true; const r = await api('/api/envios/puxar', {}); await carregar(); draw(); toast(r.ok ? `${r.novas} nota${r.novas === 1 ? '' : 's'} nova${r.novas === 1 ? '' : 's'} · ${r.casadas} casaram${r.erros?.length ? ' · ' + r.erros.length + ' com erro' : ''}` : r.erro, 6000); return; }
+    case 'puxar': { el.disabled = true; const r = await api('/api/envios/puxar', {}); await carregar(); draw(); toast(r.ok ? `${r.novas} nota${r.novas === 1 ? '' : 's'} nova${r.novas === 1 ? '' : 's'}${r.excluidas ? ` · ${r.excluidas} excluída${r.excluidas === 1 ? '' : 's'} pelo celular` : ''}${r.erros?.length ? ' · ' + r.erros.length + ' com erro' : ''}` : r.erro, 6000); return; }
     case 'cam': captura.nova(); return;
     case 'anexar': captura.anexar(v); return;
     case 'foto': { const n = N.nota(v); verFoto(fotoUrl(n)); return; }
@@ -555,12 +577,14 @@ document.addEventListener('input', (e) => {
   const el = e.target.closest('[data-aj]'); if (el && el.tagName === 'INPUT' && el.type !== 'checkbox') { ajuste(el); return; }
   if (e.target.id !== 'q') return; st.q = e.target.value; const pos = e.target.selectionStart; draw(); const q = $('#q'); if (q) { q.focus(); q.setSelectionRange(pos, pos); }
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && st.edit) { st.edit = null; drawer(); } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && (st.edit || st.notaVer)) { st.edit = null; st.notaVer = null; st.confirmar = null; drawer(); } });
 
 montarPecas();
 try {
-  await carregar(); draw();
-  if (info.envio?.url) { const r = await api('/api/envios/puxar', {}); if (r.ok && r.novas) { await carregar(); draw(); toast(`${r.novas} nota${r.novas === 1 ? '' : 's'} nova${r.novas === 1 ? '' : 's'} do celular · ${r.casadas} casaram`); } }
+  await carregar();
+  if (migrarNotas(L, novoId)) { N = criarNucleo(L); await salvar(); }
+  draw();
+  if (info.envio?.url) { const r = await api('/api/envios/puxar', {}); if (r.ok && (r.novas || r.excluidas)) { await carregar(); draw(); toast(`${r.novas} nota${r.novas === 1 ? '' : 's'} nova${r.novas === 1 ? '' : 's'} do celular${r.excluidas ? ` · ${r.excluidas} excluída${r.excluidas === 1 ? '' : 's'}` : ''}`); } }
 } catch (e) { $('#view').innerHTML = `<div class="carregando">${esc(e.message)}</div>`; }
 </script>
 </body>

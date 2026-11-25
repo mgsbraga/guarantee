@@ -130,14 +130,26 @@ body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;touch-acti
 @keyframes up{from{transform:translateY(40px);opacity:.4}}
 .chip{border-radius:20px;padding:8px 13px}
 .toast{bottom:calc(104px + env(safe-area-inset-bottom));border-radius:14px}
+/* detalhe da nota */
+.nv-foto{height:300px;border-radius:16px;background:var(--surface-2);display:grid;place-items:center;overflow:hidden;cursor:zoom-in}
+.nv-foto img{width:100%;height:100%;object-fit:contain;background:#fff}
+.nv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px}
+.nv-top h4{margin:0;font-size:19px;letter-spacing:-.02em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px;margin-top:14px}
+.nv-grid span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.nv-grid b{font-size:15.5px;font-weight:650}
+.nv-excluir{margin-top:18px;width:100%;border:1px solid color-mix(in srgb,var(--bad) 40%,transparent);background:none;color:var(--bad);border-radius:14px;padding:13px;font-size:15px;font-weight:700;cursor:pointer}
+.nv-conf{margin-top:16px;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--bad) 10%,var(--surface));font-size:14px;line-height:1.4}
+.sh-del{margin-top:12px;width:100%;border:0;border-radius:16px;padding:15px;background:var(--bad);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.sh-del:disabled{opacity:.6}
 </style>
 </head>
 <body>
 <main class="wrap" id="view"><div class="carregando">Carregando…</div></main>
 <script type="module">
-import { idDoLogin, derivarBits, importarChave, decifrar, paraObjeto, b64 } from './crypto.mjs?v=152fe29580';
-import { U, criarNucleo } from './app/nucleo.mjs?v=860d0c3f79';
-import { ICO, P, CI, TC, ic, COR, quemTag, pill, montarPecas, toast, verFoto, criarCaptura } from './app/ui.mjs?v=a67b7a162d';
+import { idDoLogin, derivarBits, importarChave, decifrar, cifrar, paraBytes, paraObjeto, b64 } from './crypto.mjs?v=152fe29580';
+import { U, criarNucleo } from './app/nucleo.mjs?v=8aa377bfea';
+import { ICO, P, CI, TC, ic, COR, quemTag, pill, montarPecas, toast, verFoto, criarCaptura, travarFundo, destravarFundo } from './app/ui.mjs?v=30462cee63';
 
 const { fmt, esc, dCurto } = U;
 const $ = (s) => document.querySelector(s);
@@ -190,9 +202,10 @@ async function abrir(ac) {
   EU = { login: ac.login, nome: ac.nome };
   L = paraObjeto(await decifrar(K, await (await fetch('data/ledger.enc', { cache: 'no-store' })).json()));
   N = criarNucleo(L);
-  limparEnviadas();
+  guarda.apagar(CHAVE_ENVIADAS);   // lista antiga, só deste aparelho — agora vem do recebedor
   $('#view').className = 'wrap';
   draw();
+  carregarEspelhos().then(draw);
 }
 function sair() {
   guarda.apagar(CHAVE_SESSAO); K = L = N = EU = null;
@@ -216,12 +229,29 @@ function carregarMiniaturas() {
 }
 
 // ---------------------------------------------------------------- envio
-const enviadas = () => guarda.ler(CHAVE_ENVIADAS, []);
-function limparEnviadas() {
-  const recebidas = new Set(L.notas.map((n) => n.uid).filter(Boolean));
-  const resto = enviadas().filter((e) => !recebidas.has(e.uid) && e.login === EU.login);
-  guarda.gravar(CHAVE_ENVIADAS, resto);
+// "Enviadas" = cópias cifradas com a chave do site que o celular deixa no recebedor. Aparecem em
+// qualquer aparelho (Safari, app da Tela de Início, outro celular) até o painel processar a nota.
+let ESP = [];                 // cópias decifradas: notas a caminho e pedidos de exclusão
+const fotosPend = new Map();  // uid -> endereço da foto já aberta
+async function carregarEspelhos() {
+  if (!META.envio || !K) return;
+  try {
+    const r = await fetch(META.envio.url + '/espelhos', { cache: 'no-store' });
+    if (!r.ok) return;
+    const { itens } = await r.json(), lista = [];
+    for (const it of itens || []) { try { const o = paraObjeto(await decifrar(K, JSON.parse(it.dados))); o.uid = it.uid; lista.push(o); } catch { /* outra chave ou lixo: ignora */ } }
+    ESP = [...lista, ...ESP.filter((e) => e.local && !lista.some((x) => x.uid === e.uid))];
+  } catch { /* sem rede: fica o que já tinha */ }
 }
+const exclusoes = () => { const e = ESP.filter((x) => x.tipo === 'excluir'); return { uids: new Set(e.map((x) => x.alvoUid).filter(Boolean)), ids: new Set(e.map((x) => x.alvoId).filter(Boolean)) }; };
+/** Notas desta pessoa que saíram do celular e o painel ainda não processou. */
+function aCaminho() {
+  const ex = exclusoes(), recebidas = new Set(L.notas.map((n) => n.uid).filter(Boolean)), excl = new Set(L.excluidas || []);
+  return ESP.filter((e) => e.tipo === 'nota' && e.login === EU.login && !recebidas.has(e.uid) && !excl.has(e.uid) && !ex.uids.has(e.uid))
+    .sort((a, b) => (b.enviadoEm || '').localeCompare(a.enviadoEm || ''));
+}
+/** Nota publicada com pedido de exclusão a caminho: some das listas. */
+const excluidaAqui = (n) => { const ex = exclusoes(); return ex.ids.has(n.id) || Boolean(n.uid && ex.uids.has(n.uid)); };
 function miniatura(img) {
   const c = document.createElement('canvas'), k = 96 / Math.max(img.width, img.height);
   c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
@@ -236,20 +266,72 @@ async function cifrarParaEnvio(conteudo) {
   const bruta = await crypto.subtle.exportKey('raw', aes);
   return { v: 1, alg: 'RSA-OAEP-3072+AES-256-GCM', chave: b64.from(await crypto.subtle.encrypt(ALG, publica, bruta)), iv: b64.from(iv), ct: b64.from(ct) };
 }
-async function enviarNota(d) {
-  if (!META.envio) throw new Error('O envio de notas ainda não foi ligado. Peça ao Miguel.');
-  const uid = crypto.randomUUID();
-  const conteudo = { tipo: 'nota', uid, autor: EU.login, estab: d.estab, valor: d.valor, data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: d.lanc || null, chave: d.chave || '', enviadoEm: new Date().toISOString(), foto: { mime: d.foto.mime, dataB64: d.foto.dataB64 } };
-  const pacote = await cifrarParaEnvio(conteudo);
+async function postar(caminho, corpo) {
   let r;
-  try { r = await fetch(META.envio.url + '/enviar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(pacote) }); }
-  catch { throw new Error('Sem conexão. A nota não foi enviada — tente de novo.'); }
+  try { r = await fetch(META.envio.url + caminho, { method: 'POST', headers: { 'content-type': 'application/json' }, body: corpo }); }
+  catch { throw new Error('Sem conexão. Nada foi enviado — tente de novo.'); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok || !j.ok) throw new Error(j.erro || `O recebedor respondeu ${r.status}. Tente de novo.`);
-  const lista = enviadas();
-  lista.push({ uid, login: EU.login, estab: d.estab, valor: d.valor, data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: d.lanc || null, enviadoEm: conteudo.enviadoEm, mini: d.foto.img ? miniatura(d.foto.img) : '' });
-  guarda.gravar(CHAVE_ENVIADAS, lista);
-  return 'Nota enviada ✓ — entra no sistema quando o Miguel abrir o painel';
+}
+/** Cópia cifrada com a chave do site (só quem tem login lê). Se falhar, o envio em si já valeu. */
+async function espelhar(uid, meta, fotoBytes) {
+  try {
+    await postar(`/espelho?uid=${uid}&parte=meta`, JSON.stringify(await cifrar(K, paraBytes(meta))));
+    if (fotoBytes) await postar(`/espelho?uid=${uid}&parte=foto`, JSON.stringify(await cifrar(K, fotoBytes)));
+  } catch { /* neste aparelho a nota continua aparecendo até fechar */ }
+}
+async function enviarNota(d) {
+  if (!META.envio) throw new Error('O envio de notas ainda não foi ligado. Peça ao Miguel.');
+  const uid = crypto.randomUUID(), enviadoEm = new Date().toISOString();
+  const conteudo = { tipo: 'nota', uid, autor: EU.login, estab: d.estab, valor: d.valor, data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: d.lanc || null, chave: d.chave || '', enviadoEm, foto: { mime: d.foto.mime, dataB64: d.foto.dataB64 } };
+  await postar('/enviar', JSON.stringify(await cifrarParaEnvio(conteudo)));
+  const meta = { tipo: 'nota', uid, login: EU.login, estab: d.estab, valor: d.valor, data: d.data, cartao: d.cartao, cat: d.cat, quem: d.quem, lanc: d.lanc || null, enviadoEm, mini: d.foto.img ? miniatura(d.foto.img) : '' };
+  fotosPend.set(uid, d.foto.dataUrl);
+  ESP.push({ ...meta, local: true });
+  espelhar(uid, meta, b64.to(d.foto.dataB64));   // segue em segundo plano
+  return 'Nota enviada ✓ — entra no sistema quando o painel buscar';
+}
+/** Exclusão pedida pelo celular: vai cifrada como as notas; o painel apaga na próxima busca. */
+async function pedirExclusao(alvo) {
+  const uid = crypto.randomUUID(), enviadoEm = new Date().toISOString();
+  await postar('/enviar', JSON.stringify(await cifrarParaEnvio({ tipo: 'excluir', uid, autor: EU.login, ...alvo, enviadoEm })));
+  const meta = { tipo: 'excluir', uid, login: EU.login, ...alvo, enviadoEm };
+  ESP.push({ ...meta, local: true });
+  await espelhar(uid, meta, null);
+}
+
+// ---------------------------------------------------------------- detalhe da nota
+let verNota = null;   // { pub: id da nota publicada } ou { pend: uid da nota a caminho }; + confirmar
+async function fotoDe(ref) {
+  if (ref.pub) { const n = N.nota(ref.pub); return n && n.foto ? urlFoto(n.foto) : ''; }
+  if (fotosPend.has(ref.pend)) return fotosPend.get(ref.pend);
+  try {
+    const r = await fetch(META.envio.url + '/espelho-foto?uid=' + encodeURIComponent(ref.pend), { cache: 'no-store' });
+    if (!r.ok) return '';
+    const u = URL.createObjectURL(new Blob([await decifrar(K, await r.json())], { type: 'image/jpeg' }));
+    fotosPend.set(ref.pend, u); return u;
+  } catch { return ''; }
+}
+function desenharNota() {
+  const bg = $('#gNota');
+  if (!verNota) { bg.classList.remove('show'); destravarFundo('nota'); return; }
+  const pub = verNota.pub && N.nota(verNota.pub), pend = verNota.pend && ESP.find((e) => e.uid === verNota.pend && e.tipo === 'nota');
+  const n = pub || pend; if (!n) { verNota = null; desenharNota(); return; }
+  const autor = pub ? n.autor : n.login, meu = autor === EU.login, l = n.lanc && N.lanc(n.lanc);
+  const [cls, txt] = pend ? ['n', 'a caminho do painel'] : N.conferida(n) ? ['ok', 'conferida na fatura'] : ['wait', 'a conferir c/ fatura'];
+  const efeito = pend ? 'Ela não entra no sistema.' : 'O painel apaga a nota' + (l && l.origem === 'nota' && !l.fatura ? ' e a compra que ela lançou' : '') + ' na próxima busca.';
+  travarFundo('nota'); bg.classList.add('show');
+  bg.firstElementChild.innerHTML = `<div class="nv-foto" data-a="nvFoto"><div class="spin"></div></div>
+    <div class="nv-top"><h4>${esc(n.estab || (l && l.desc) || 'Nota')}</h4><span class="pill ${cls}">${txt}</span></div>
+    <div class="nv-grid">
+      <div><span>Valor</span><b>${fmt(n.valor || 0)}</b></div><div><span>Data</span><b>${dCurto(n.data)}/${String(n.data || '').slice(0, 4)}</b></div>
+      <div><span>Categoria</span><b>${esc(N.cat(n.cat || 'outras').nome)}</b></div><div><span>Cliente</span><b>${esc(N.quemTxt(n.quem) || '—')}</b></div>
+      <div><span>Cartão</span><b>${esc(N.conta(n.cartao).nome || '—')}</b></div><div><span>Enviada por</span><b>${esc(N.SOC[autor] || autor || '—')}</b></div></div>
+    ${!meu ? '<button class="sh-cancel" data-a="nvFechar">Fechar</button>'
+      : verNota.confirmar ? `<div class="nv-conf">Excluir esta nota? ${efeito}</div><button class="sh-del" data-a="nvExcluirSim">Sim, excluir</button><button class="sh-cancel" data-a="nvNao">Cancelar</button>`
+      : '<button class="nv-excluir" data-a="nvExcluir">Excluir nota</button><button class="sh-cancel" data-a="nvFechar">Fechar</button>'}`;
+  const ref = verNota;
+  fotoDe(ref).then((u) => { const box = bg.querySelector('.nv-foto'); if (!box || verNota !== ref) return; box.dataset.src = u || ''; box.innerHTML = u ? `<img src="${u}" alt="Foto da nota">` : '<div class="nf">Foto indisponível agora</div>'; });
 }
 
 // ---------------------------------------------------------------- telas
@@ -269,32 +351,32 @@ function topo() {
 
 function paginaNotas() {
   const m = st.mes, ids = new Set(meusCartoes().map((c) => c.id)), meu = (c) => ids.has(c);
-  const env = enviadas(), envLanc = new Set(env.map((e) => e.lanc).filter(Boolean));
-  const ag = N.aguardando().filter((n) => meu(n.cartao));
+  const env = aCaminho(), envLanc = new Set(env.map((e) => e.lanc).filter(Boolean));
+  const ag = N.aguardando().filter((n) => meu(n.cartao) && !excluidaAqui(n));
   const sn = N.semNota(m).filter((l) => meu(l.conta));
-  const ok = N.casadas(m).filter((n) => meu(n.cartao));
+  const ok = N.casadas(m).filter((n) => meu(n.cartao) && !excluidaAqui(n));
   const compras = L.lanc.filter((l) => N.ehCartao(l) && N.emRes(l) && l.comp === m && meu(l.conta));
   const com = compras.filter((l) => l.nota || envLanc.has(l.id)).length, tot = compras.length;
   const hero = tot
     ? `<div class="h-k">Notas de ${U.mesNome(m)}</div><div class="h-big">${com} de ${tot}<small>compras com nota</small></div>
       <div class="h-bar"><i style="width:${Math.round(com / tot * 100)}%"></i></div>
       <div class="h-sub">${com === tot ? 'Tudo com nota — o contador agradece ✓' : `Faltam ${tot - com} — anexe a foto aí embaixo`}</div>`
-    : `<div class="h-k">Notas de ${U.mesNome(m)}</div><div class="h-big">${ag.length + env.length}<small>${ag.length + env.length === 1 ? 'nota guardada' : 'notas guardadas'}</small></div>
-      <div class="h-sub">A fatura ainda não chegou. Quando chegar, cada nota encontra sua compra sozinha.</div>`;
-  const nota = (n) => { const l = n.lanc && N.lanc(n.lanc); return `<div class="row click" data-a="foto" data-v="${esc(n.foto || '')}">${icFoto(n.cat, n.foto)}
+    : `<div class="h-k">Notas de ${U.mesNome(m)}</div><div class="h-big">${ag.length + env.length}<small>${ag.length + env.length === 1 ? 'nota' : 'notas'}</small></div>
+      <div class="h-sub">Cada nota já conta no mês; a fatura confere quando chegar.</div>`;
+  const nota = (n) => { const okF = N.conferida(n); return `<div class="row click" data-a="nota" data-v="${n.id}">${icFoto(n.cat, n.foto)}
     <div class="m"><div class="t">${esc(n.estab || 'Sem nome')}</div><div class="s">${dCurto(n.data)} · ${esc(N.quemTxt(n.quem))}</div></div>
-    <div class="vcol"><div class="v">${fmt(n.valor)}</div><span class="pill ${l ? 'ok' : 'wait'}">${l ? 'na fatura' : 'aguardando'}</span></div></div>`; };
-  const enviada = (e) => { const l = e.lanc && N.lanc(e.lanc); return `<div class="row">${ic(e.cat || (l && l.cat), '', e.mini)}
-    <div class="m"><div class="t">${esc(e.estab || (l && l.desc) || 'Nota')}</div><div class="s">${dCurto(e.data)} · enviada ${dCurto(e.enviadoEm.slice(0, 10))}</div></div>
-    <div class="vcol"><div class="v">${fmt(e.valor)}</div><span class="pill n">a caminho</span></div></div>`; };
+    <div class="vcol"><div class="v">${fmt(n.valor)}</div><span class="pill ${okF ? 'ok' : 'wait'}">${okF ? 'conferida' : 'a conferir'}</span></div></div>`; };
+  const enviada = (e) => { const l = e.lanc && N.lanc(e.lanc); return `<div class="row click" data-a="pend" data-v="${e.uid}">${ic(e.cat || (l && l.cat), '', e.mini)}
+    <div class="m"><div class="t">${esc(e.estab || (l && l.desc) || 'Nota')}</div><div class="s">${dCurto(e.data)} · enviada ${dCurto(String(e.enviadoEm || '').slice(0, 10))}</div></div>
+    <div class="vcol"><div class="v">${fmt(e.valor || (l && l.valor) || 0)}</div><span class="pill n">a caminho</span></div></div>`; };
 
   return topo() + `<div class="hero">${hero}<button class="h-cam" data-a="cam">${ICO.cam} Fotografar nota</button></div>
   ${sn.length ? `<div class="sec"><div class="sec-h"><h3>Sem nota <span class="cnt warn">${sn.filter((l) => !envLanc.has(l.id)).length}</span></h3></div><div class="card alert">
     ${sn.map((l) => `<div class="row">${ic(l.cat)}<div class="m"><div class="t">${esc(l.desc)}</div><div class="s">${dCurto(l.venc)} · ${fmt(l.valor)}</div></div>${envLanc.has(l.id) ? '<span class="pill n">foto enviada</span>' : `<button class="btn-foto" data-a="anexar" data-v="${l.id}">${ICO.cam}Foto</button>`}</div>`).join('')}</div></div>` : ''}
-  ${env.length ? `<div class="sec"><div class="sec-h"><h3>Enviadas <span class="cnt">${env.length}</span></h3><span class="r">entram no próximo painel</span></div><div class="card">${env.slice().reverse().map(enviada).join('')}</div></div>` : ''}
-  <div class="sec"><div class="sec-h"><h3>Esperando a fatura <span class="cnt">${ag.length}</span></h3></div>
-    <div class="card">${ag.map(nota).join('') || vazio('Nenhuma nota esperando')}</div></div>
-  <div class="sec"><div class="sec-h"><h3>Já na fatura <span class="cnt">${ok.length}</span></h3><span class="r">${U.mesNome(m)}</span></div>
+  ${env.length ? `<div class="sec"><div class="sec-h"><h3>Enviadas <span class="cnt">${env.length}</span></h3><span class="r">o painel ainda não buscou</span></div><div class="card">${env.map(enviada).join('')}</div></div>` : ''}
+  <div class="sec"><div class="sec-h"><h3>A conferir com a fatura <span class="cnt">${ag.length}</span></h3></div>
+    <div class="card">${ag.map(nota).join('') || vazio('Nenhuma nota a conferir')}</div></div>
+  <div class="sec"><div class="sec-h"><h3>Conferidas <span class="cnt">${ok.length}</span></h3><span class="r">${U.mesNome(m)}</span></div>
     <div class="card">${ok.map(nota).join('') || vazio('Nenhuma neste mês')}</div></div>`;
 }
 
@@ -326,7 +408,7 @@ function barra() {
   if (!$('.tabs')) {
     document.body.insertAdjacentHTML('beforeend', '<nav class="tabs"></nav>');
   }
-  const ids = new Set(meusCartoes().map((c) => c.id)), envL = new Set(enviadas().map((e) => e.lanc));
+  const ids = new Set(meusCartoes().map((c) => c.id)), envL = new Set(aCaminho().map((e) => e.lanc).filter(Boolean));
   const b = N.semNota(st.mes).filter((l) => ids.has(l.conta) && !envL.has(l.id)).length;
   $('.tabs').innerHTML = `<button data-a="tab" data-v="notas" class="${st.page === 'notas' ? 'on' : ''}">${ICO.nota}Notas${b ? `<span class="bdg">${b}</span>` : ''}</button>
     <button class="fab" data-a="cam" aria-label="Fotografar nota">${ICO.cam}</button>
@@ -350,6 +432,22 @@ document.addEventListener('click', async (e) => {
     case 'cam': if (!META.envio) { toast('O envio de notas ainda não foi ligado.'); return; } captura.nova(); return;
     case 'anexar': if (!META.envio) { toast('O envio de notas ainda não foi ligado.'); return; } captura.anexar(v); return;
     case 'foto': { if (!v) return; const u = await urlFoto(v); if (u) verFoto(u); else toast('Não consegui abrir a foto'); return; }
+    case 'nota': verNota = { pub: v }; desenharNota(); return;
+    case 'pend': verNota = { pend: v }; desenharNota(); return;
+    case 'nvFoto': if (el.dataset.src) verFoto(el.dataset.src); return;
+    case 'nvFechar': verNota = null; desenharNota(); return;
+    case 'nvExcluir': verNota.confirmar = true; desenharNota(); return;
+    case 'nvNao': verNota.confirmar = false; desenharNota(); return;
+    case 'nvExcluirSim': {
+      const pend = verNota.pend, n = verNota.pub && N.nota(verNota.pub);
+      el.disabled = true; el.textContent = 'Excluindo…';
+      try {
+        await pedirExclusao(pend ? { alvoUid: pend } : { alvoId: n.id, ...(n.uid ? { alvoUid: n.uid } : {}) });
+        verNota = null; desenharNota(); draw();
+        toast(pend ? 'Nota excluída ✓' : 'Nota excluída ✓ — sai do sistema quando o painel buscar');
+      } catch (err) { el.disabled = false; el.textContent = 'Sim, excluir'; toast(err.message, 5000); }
+      return;
+    }
     case 'sair': sair(); return;
     default: return;
   }
@@ -358,6 +456,9 @@ document.addEventListener('click', async (e) => {
 
 // ---------------------------------------------------------------- início
 montarPecas();
+document.body.insertAdjacentHTML('beforeend', '<div class="sheet-bg" id="gNota"><div class="sheet"></div></div>');
+$('#gNota').addEventListener('click', (e) => { if (e.target.id === 'gNota') { verNota = null; desenharNota(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden && N) carregarEspelhos().then(draw); });
 try {
   META = await (await fetch('data/meta.json', { cache: 'no-store' })).json();
   const s = guarda.ler(CHAVE_SESSAO, null);

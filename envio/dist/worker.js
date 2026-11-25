@@ -8,6 +8,10 @@
  *
  * Este arquivo é um molde. O pronto para publicar sai de:  node guarantee.mjs envio
  *
+ * Além do envio, guarda uma CÓPIA de cada nota cifrada com a chave dos dados do site
+ * (espelhos/<uid>.meta e .foto), para o celular mostrar "Enviadas" em qualquer aparelho
+ * antes de o painel processar. O Worker também não lê essa cópia.
+ *
  * Configuração na Cloudflare (nada disso vive aqui, que é público):
  *   - Binding de R2 chamado ENVIOS
  *   - Secret SEGREDO_ADMIN — usado pelo painel para listar, baixar e apagar
@@ -15,6 +19,8 @@
 
 const ORIGEM_SITE = "https://guarantee.miguelbraga.com.br";
 const LIMITE = 15 * 1024 * 1024;   // 15 MB por envio
+const LIMITE_META = 64 * 1024;      // dados de uma nota (com miniatura)
+const UID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const json = (corpo, codigo = 200, extra = {}) =>
   new Response(JSON.stringify(corpo), {
@@ -35,7 +41,7 @@ function cors(req) {
   if (!origem || !ORIGEM_SITE || origem !== ORIGEM_SITE) return {};
   return {
     'access-control-allow-origin': origem,
-    'access-control-allow-methods': 'POST, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
     'access-control-allow-headers': 'content-type',
     'access-control-max-age': '86400',
     'vary': 'origin',
@@ -65,6 +71,40 @@ export default {
       return json({ ok: true, protocolo }, 200, h);
     }
 
+    // ---------------------------------------------------------- cópias para o celular (cifradas com a chave do site)
+    if (rota === '/espelho' && req.method === 'POST') {
+      const h = cors(req);
+      if (!h['access-control-allow-origin']) return json({ erro: 'Origem não autorizada.' }, 403);
+      const uid = url.searchParams.get('uid') || '', parte = url.searchParams.get('parte') || '';
+      if (!UID.test(uid) || !['meta', 'foto'].includes(parte)) return json({ erro: 'Pedido inválido.' }, 400, h);
+      const tamanho = Number(req.headers.get('content-length') || 0);
+      if (!tamanho || tamanho > (parte === 'meta' ? LIMITE_META : LIMITE)) return json({ erro: 'Tamanho inválido.' }, 413, h);
+      const chave = `espelhos/${uid}.${parte}`;
+      if (await env.ENVIOS.head(chave)) return json({ erro: 'Já existe.' }, 409, h);   // nunca sobrescreve
+      await env.ENVIOS.put(chave, req.body, { httpMetadata: { contentType: 'application/octet-stream' }, customMetadata: { recebidoEm: new Date().toISOString() } });
+      return json({ ok: true }, 200, h);
+    }
+    if (rota === '/espelhos' && req.method === 'GET') {
+      const h = cors(req);
+      if (!h['access-control-allow-origin']) return json({ erro: 'Origem não autorizada.' }, 403);
+      const lista = await env.ENVIOS.list({ prefix: 'espelhos/', limit: 500 });
+      const metas = lista.objects.filter((o) => o.key.endsWith('.meta')).slice(0, 200);
+      const itens = await Promise.all(metas.map(async (o) => {
+        const obj = await env.ENVIOS.get(o.key);
+        return { uid: o.key.slice(9, -5), dados: obj ? await obj.text() : null };
+      }));
+      return json({ itens: itens.filter((i) => i.dados) }, 200, h);
+    }
+    if (rota === '/espelho-foto' && req.method === 'GET') {
+      const h = cors(req);
+      if (!h['access-control-allow-origin']) return json({ erro: 'Origem não autorizada.' }, 403);
+      const uid = url.searchParams.get('uid') || '';
+      if (!UID.test(uid)) return json({ erro: 'Pedido inválido.' }, 400, h);
+      const obj = await env.ENVIOS.get(`espelhos/${uid}.foto`);
+      if (!obj) return json({ erro: 'Não encontrada.' }, 404, h);
+      return new Response(obj.body, { headers: { 'content-type': 'application/octet-stream', 'cache-control': 'no-store', ...h } });
+    }
+
     // ---------------------------------------------------------- área do painel
     if (rota.startsWith('/api/')) {
       if (!admin(req, env)) return json({ erro: 'Não autorizado.' }, 401);
@@ -88,7 +128,7 @@ export default {
       }
       if (rota === '/api/apagar' && req.method === 'POST') {
         const chave = url.searchParams.get('chave') || '';
-        if (!chave.startsWith('envios/')) return json({ erro: 'Chave inválida.' }, 400);
+        if (!chave.startsWith('envios/') && !chave.startsWith('espelhos/')) return json({ erro: 'Chave inválida.' }, 400);
         await env.ENVIOS.delete(chave);
         return json({ ok: true });
       }

@@ -134,8 +134,10 @@ export function criarNucleo(L) {
     });
     return k;
   }
-  const aguardando = () => L.notas.filter((n) => !n.lanc).sort((a, b) => b.data.localeCompare(a.data));
-  const casadas = (m) => L.notas.filter((n) => n.lanc && n.data.slice(0, 7) === m).sort((a, b) => b.data.localeCompare(a.data));
+  /** A nota já está conferida com a fatura? (compra da fatura ligada a ela, ou lançamento da nota que a fatura confirmou) */
+  const conferida = (n) => { const l = n.lanc && lanc(n.lanc); return Boolean(l && (l.origem !== 'nota' || l.fatura)); };
+  const aguardando = () => L.notas.filter((n) => !conferida(n)).sort((a, b) => b.data.localeCompare(a.data));
+  const casadas = (m) => L.notas.filter((n) => conferida(n) && n.data.slice(0, 7) === m).sort((a, b) => b.data.localeCompare(a.data));
   const semNota = (m) => L.lanc.filter((l) => ehCartao(l) && emRes(l) && !l.nota && l.comp === m).sort((a, b) => a.venc.localeCompare(b.venc));
 
   // ---- pendências do mês ----
@@ -159,6 +161,8 @@ export function criarNucleo(L) {
   function status(l) {
     const g = grupo(l), hoje = U.hoje();
     if (g === 'movimento') return ['n', 'movimento'];
+    if (l.origem === 'nota' && !l.fatura) return ['wait', 'conferir c/ fatura'];
+    if (l.origem === 'nota' && l.fatura) return ['ok', 'conferida na fatura'];
     if (l.pago) return ['ok', (g === 'receita' ? 'recebido ' : 'pago ') + U.dCurto(l.pago)];
     if (l.venc < hoje) return ['no', (g === 'receita' ? 'atrasado ' : 'vencido ') + U.dCurto(l.venc)];
     return ['wait', (g === 'receita' ? 'a receber ' : 'a pagar ') + U.dCurto(l.venc)];
@@ -167,7 +171,7 @@ export function criarNucleo(L) {
   return {
     L, SOC, cat, cli, conta, grupo, emRes, ehCartao, partes, quemDe, setQuem, quemTxt,
     resumo, resumoMes, socios, sociosMes, receitas, saidasPorCat, lancsMes, porCliente,
-    nota, lanc, ligar, casar, aguardando, casadas, semNota, pendencias, status,
+    nota, lanc, ligar, casar, conferida, aguardando, casadas, semNota, pendencias, status,
   };
 }
 
@@ -273,14 +277,20 @@ export function aplicarExtrato(L, contaId, linhas, novoId) {
   return { baixas, novos, repetidos, semRegra };
 }
 
-/** Aplica uma fatura de cartão: cada compra vira lançamento do dono do cartão; depois casa as notas. */
+/** Aplica uma fatura de cartão: confere as compras que já entraram pela nota; o resto vira lançamento do dono do cartão. */
 export function aplicarFatura(L, cartaoId, mesFatura, linhas, novoId) {
   const N = criarNucleo(L), c = N.conta(cartaoId);
   let novos = 0, repetidos = 0;
-  const ja = new Set(L.lanc.filter((l) => l.conta === cartaoId).map((l) => `${l.venc}|${r2(l.valor)}|${norm(l.desc)}`));
+  let conferidas = 0;
+  // linhas já trazidas por fatura (compra lançada pela nota só conta depois de conferida)
+  const ja = new Set(L.lanc.filter((l) => l.conta === cartaoId && (l.origem !== 'nota' || l.faturaChave)).map((l) => l.faturaChave || `${l.venc}|${r2(l.valor)}|${norm(l.desc)}`));
   for (const x of linhas) {
     const k = `${x.data}|${r2(x.valor)}|${norm(x.desc)}`;
     if (ja.has(k)) { repetidos++; continue; }
+    // compra que já entrou pela nota: mesmo cartão, mesmo valor, até 3 dias → só confere
+    const daNota = L.lanc.filter((l) => l.conta === cartaoId && l.origem === 'nota' && !l.fatura && Math.abs(l.valor - x.valor) < 0.01 && U.dias(l.venc, x.data) <= 3)
+      .sort((a, b) => U.dias(a.venc, x.data) - U.dias(b.venc, x.data))[0];
+    if (daNota) { daNota.fatura = mesFatura; daNota.descFatura = x.desc; daNota.faturaChave = k; ja.add(k); conferidas++; continue; }
     const rg = L.regras.find((r) => r.lado === 'D' && norm(x.desc).includes(norm(r.contem)) && CATS.find((cc) => cc.id === r.cat && cc.grupo === 'despesa'));
     const l = { id: novoId(), conta: cartaoId, cat: rg ? rg.cat : 'outras', desc: x.desc, comp: x.data.slice(0, 7), venc: x.data, pago: x.data, valor: r2(x.valor), origem: 'fatura' };
     N.setQuem(l, rg && rg.quem ? rg.quem : (c.dono ? 's:' + c.dono : ''));
@@ -289,5 +299,44 @@ export function aplicarFatura(L, cartaoId, mesFatura, linhas, novoId) {
   }
   if (!L.faturas[cartaoId] || mesFatura > L.faturas[cartaoId]) L.faturas[cartaoId] = mesFatura;
   const casadas = N.casar();
-  return { novos, repetidos, casadas };
+  return { novos, repetidos, conferidas, casadas };
+}
+
+/**
+ * Registra uma nota que acabou de chegar: se a compra já veio na fatura, liga as duas;
+ * senão a nota vira na hora um lançamento do cartão "a conferir com a fatura".
+ */
+export function registrarNota(L, n, novoId) {
+  const N = criarNucleo(L);
+  if (n.lanc && N.lanc(n.lanc)) return 'ligada';
+  const daFatura = L.lanc.filter((l) => l.conta === n.cartao && l.origem !== 'nota' && !l.nota && Math.abs(l.valor - n.valor) < 0.01 && U.dias(l.venc, n.data) <= 3)
+    .sort((a, b) => U.dias(a.venc, n.data) - U.dias(b.venc, n.data))[0];
+  if (daFatura) { N.ligar(n, daFatura); return 'conferida'; }
+  const l = { id: novoId(), origem: 'nota', conta: n.cartao, cat: n.cat || 'outras', desc: n.estab || 'Compra no cartão', valor: r2(n.valor), comp: n.data.slice(0, 7), venc: n.data, pago: n.data, nota: n.id };
+  N.setQuem(l, n.quem || '');
+  L.lanc.push(l); n.lanc = l.id;
+  return 'lancada';
+}
+
+/** Notas antigas que ainda não viraram lançamento. Devolve quantas mudaram. */
+export function migrarNotas(L, novoId) {
+  let k = 0;
+  for (const n of L.notas) if (!n.lanc || !L.lanc.some((l) => l.id === n.lanc)) { n.lanc = null; registrarNota(L, n, novoId); k++; }
+  return k;
+}
+
+/**
+ * Exclui uma nota. A compra que nasceu da nota (e a fatura ainda não confirmou) vai junto;
+ * compra que veio da fatura fica, só perde a nota. Devolve o arquivo da foto, para apagar.
+ */
+export function excluirNota(L, id) {
+  const i = L.notas.findIndex((n) => n.id === id); if (i < 0) return null;
+  const n = L.notas[i], l = n.lanc && L.lanc.find((x) => x.id === n.lanc);
+  if (l) {
+    if (l.origem === 'nota' && !l.fatura) L.lanc.splice(L.lanc.indexOf(l), 1);
+    else { delete l.nota; if (l.origem === 'nota') l.origem = 'fatura'; }
+  }
+  L.notas.splice(i, 1);
+  if (n.uid) (L.excluidas = L.excluidas || []).push(n.uid);
+  return { foto: n.foto || null, uid: n.uid || null };
 }
