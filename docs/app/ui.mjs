@@ -197,7 +197,7 @@ export function criarCaptura(cfg) {
     const cl = N.L.clientes.slice().sort((a, b) => (b.div[me] || 0) - (a.div[me] || 0));
     const cartoes = cfg.cartoes();
     el.innerHTML = `<div class="sh-top"><img src="${cap.foto.dataUrl}"><div><h4>${linha ? 'Nota de ' + esc(linha.desc) : 'Nova nota'}</h4>
-      <div class="sh-note">${linha ? 'Vai direto para esta compra da fatura.' : cap.qr === 'completo' ? '✓ QR lido: data e valor preenchidos — confira.' : cap.qr === 'chave' ? '✓ QR lido, mas esta nota não traz o valor no QR — digite o valor.' : 'Não achei QR code na foto — preencha à mão.'}</div></div></div>
+      <div class="sh-note">${linha ? 'Vai direto para esta compra da fatura.' : cap.qr === 'completo' ? '✓ QR lido: data e valor preenchidos — confira.' : cap.qr === 'chave' ? '✓ QR lido. Nesta nota o valor não vem no QR — digite o total do cupom.' : 'Não achei QR code na foto — preencha à mão.'}</div></div></div>
     ${linha ? '' : `<label class="fld"><span>Valor</span><input class="inp big" inputmode="decimal" placeholder="0,00" value="${cap.valor ? fmtN(cap.valor) : ''}" data-cap="valor"></label>
     ${cartoes.length > 1 ? `<div class="two"><label class="fld"><span>Data</span><input class="inp" type="date" value="${cap.data}" data-cap="data"></label>
     <label class="fld"><span>Cartão</span><select class="inp" data-cap="cartao">${cartoes.map((c) => `<option value="${c.id}"${c.id === cap.cartao ? ' selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></label></div>`

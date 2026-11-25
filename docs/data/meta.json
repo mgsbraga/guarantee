@@ -4,18 +4,18 @@
   "iter": 600000,
   "alg": "AES-256-GCM",
   "org": "Guarantee",
-  "geradoEm": "2026-11-25T19:04:16.184Z",
+  "geradoEm": "2026-11-25T19:15:28.341Z",
   "idChave": "uLi1tCr3RXA",
   "usuarios": {
     "689edba6a03b4a3571e97ef430107b33": {
       "salt": "IJV38EmwBcu0I5dYx6fL+w==",
-      "iv": "BW5BoSZg8/6iNzNz",
-      "ct": "NkG8O/+jLA1T0fIRaEX4oJvoSy5N/lWShlEfNXN9+pDjY8vVKH8ocWrCX6RM0nylcv5alCpl7MzPXxYslCipJJQAMgRi2tI7ChZ+DkEZ6UZNHft5w4dr3m3ueSqRcAdJapufD20="
+      "iv": "NqV/a0XMyrNaAtnJ",
+      "ct": "Zwfk7s6Li3KZQdcuXzowAMKNQnVEyRVbNlsqvAllFf4tGRvUCWxghJWZKDwYHyI1K3IC4jEk8KBR5PGovW5v4AOr5/c9r2OOpft3ef9vVcKRMx7VYlv3b79MV9iSzR55k8aT7VA="
     },
     "991b3c8f15f9adf996c59018ef41b936": {
       "salt": "2XWwXTe6xTciHq02VeSDiA==",
-      "iv": "GGe6rkZHtnHNg/jr",
-      "ct": "AjBKOG79zkG0xBFhMs1hCpP1MOM7h2dV7qxeeduRLZ/352fa+sAL5pveyoKy3fTNzxLtUgCWvOjuz5q0IQYqBfHeJg6+tCvdsYWo4RxPO8zZNxDtUDDE31Fo8oEjG+JyWUkCsKsB1g=="
+      "iv": "TNNunfRkpWl0iRwI",
+      "ct": "sSLS1VZR7VwjEiUbApxVDmR4aUkB3fjPWFC7XBaIrKG8IGeQbQiBwz3wV7/+GL1V/Y8FEGTA3CA+wBZBXyw9R3svWhCPLTZhMb/kcMRnbKkQCTJ+wgDemk+iG7gf2MaYOfx3Q3R1mg=="
     }
   },
   "envio": {
