@@ -49,8 +49,13 @@ node guarantee.mjs publish
 ```
 
 O painel busca as notas sozinho ao abrir (e no botão **Importar → Buscar notas agora**),
-guarda a foto em `local/fotos/`, apaga do recebedor e casa com a compra da fatura
-(mesmo cartão, mesmo valor, até 3 dias).
+guarda a foto em `local/fotos/` e apaga do recebedor. Cada nota vira compra do cartão na hora
+("a conferir c/ fatura"); quando a fatura é importada, a linha correspondente (mesmo cartão,
+mesmo valor, até 3 dias) só confere a compra em vez de criar outra.
+
+Enquanto o painel não busca, o celular mostra as "Enviadas" a partir de uma cópia cifrada com a
+chave do site (`espelhos/` no R2), em qualquer aparelho. Excluir uma nota pelo celular manda um
+pedido cifrado pelo mesmo caminho; o painel aplica na próxima busca.
 
 ## Estrutura
 
